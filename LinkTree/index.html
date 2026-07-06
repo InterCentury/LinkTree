@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>interblink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#0a0c14;
+    --bg-1:#11162a;
+    --violet:#7c5cff;
+    --cyan:#4ce0d2;
+    --coral:#ff6b6b;
+    --ink:#f1f1f6;
+    --muted:#8087a0;
+    --line:rgba(124,92,255,0.35);
+    --card-border:rgba(255,255,255,0.08);
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    height:100%;
+    background:var(--bg-0);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    overflow-x:hidden;
+  }
+
+  body{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:64px 20px;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(124,92,255,0.16), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(76,224,210,0.12), transparent 40%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1) 120%);
+  }
+
+  /* drifting star particles */
+  .field{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+  }
+  .particle{
+    position:absolute;
+    width:2px;
+    height:2px;
+    border-radius:50%;
+    background:rgba(240,240,255,0.55);
+    animation:drift linear infinite;
+  }
+  @keyframes drift{
+    from{transform:translateY(0px);}
+    to{transform:translateY(-120px);}
+  }
+
+  .stage{
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:440px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:var(--cyan);
+    opacity:0;
+    animation:fadeUp 0.7s ease forwards;
+    animation-delay:0.1s;
+  }
+
+  .name{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(34px,8vw,46px);
+    letter-spacing:-0.02em;
+    margin:10px 0 6px;
+    background:linear-gradient(120deg,#ffffff 30%, var(--violet) 75%, var(--cyan) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    opacity:0;
+    animation:fadeUp 0.7s ease forwards;
+    animation-delay:0.22s;
+  }
+
+  .tagline{
+    font-size:14.5px;
+    color:var(--muted);
+    text-align:center;
+    max-width:320px;
+    line-height:1.5;
+    margin-bottom:38px;
+    opacity:0;
+    animation:fadeUp 0.7s ease forwards;
+    animation-delay:0.34s;
+  }
+
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* connector svg sits behind the cards */
+  .connector{
+    position:absolute;
+    top:150px;
+    left:50%;
+    transform:translateX(-50%);
+    width:6px;
+    height:0;
+    z-index:0;
+  }
+  .connector-line{
+    stroke:var(--violet);
+    stroke-width:2;
+    fill:none;
+    stroke-dasharray:400;
+    stroke-dashoffset:400;
+    animation:drawLine 1.1s ease forwards;
+    animation-delay:0.55s;
+    opacity:0.55;
+  }
+  @keyframes drawLine{
+    to{stroke-dashoffset:0;}
+  }
+
+  .links{
+    position:relative;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    width:100%;
+  }
+
+  .card{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:16px 20px;
+    border-radius:16px;
+    text-decoration:none;
+    color:var(--ink);
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--card-border);
+    backdrop-filter:blur(6px);
+    overflow:hidden;
+    opacity:0;
+    transform:translateY(14px) scale(0.98);
+    animation:cardIn 0.6s cubic-bezier(.2,.7,.3,1) forwards;
+    transition:transform 0.35s cubic-bezier(.2,.8,.3,1), border-color 0.35s ease, background 0.35s ease;
+  }
+
+  .card::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:16px;
+    padding:1px;
+    background:linear-gradient(120deg, transparent, var(--accent, var(--violet)), transparent);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    opacity:0;
+    transition:opacity 0.35s ease;
+  }
+
+  .card:hover{
+    transform:translateY(-3px) scale(1.015);
+    background:rgba(255,255,255,0.055);
+    border-color:transparent;
+  }
+  .card:hover::before{ opacity:1; }
+  .card:active{ transform:translateY(-1px) scale(1.005); }
+
+  .card:nth-of-type(1){ animation-delay:0.62s; --accent:#e5e9ff; }
+  .card:nth-of-type(2){ animation-delay:0.74s; --accent:var(--coral); }
+  .card:nth-of-type(3){ animation-delay:0.86s; --accent:var(--violet); }
+
+  @keyframes cardIn{
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+
+  .icon-wrap{
+    flex-shrink:0;
+    width:44px;
+    height:44px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.05);
+    position:relative;
+  }
+  .icon-wrap svg{
+    width:22px;
+    height:22px;
+    stroke:var(--ink);
+    fill:none;
+    stroke-width:1.7;
+    transition:transform 0.35s ease;
+  }
+  .card:hover .icon-wrap svg{
+    transform:scale(1.08) rotate(-4deg);
+  }
+
+  .icon-wrap.pinterest svg{ fill:var(--coral); stroke:none; }
+  .icon-wrap.instagram svg{ stroke:url(#igGrad); }
+
+  .text-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    flex:1;
+    min-width:0;
+  }
+  .label{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:15.5px;
+  }
+  .handle{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--muted);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .arrow{
+    flex-shrink:0;
+    width:16px;
+    height:16px;
+    stroke:var(--muted);
+    fill:none;
+    stroke-width:2;
+    transition:transform 0.35s ease, stroke 0.35s ease;
+  }
+  .card:hover .arrow{
+    transform:translate(3px,-3px);
+    stroke:var(--ink);
+  }
+
+  .footer{
+    margin-top:40px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:0.05em;
+    opacity:0;
+    animation:fadeUp 0.7s ease forwards;
+    animation-delay:1s;
+  }
+  .footer span{ color:var(--cyan); }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before{
+      animation:none !important;
+      transition:none !important;
+      opacity:1 !important;
+      transform:none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="field" id="field"></div>
+
+<div class="stage">
+  <div class="eyebrow" id="greeting">hello</div>
+  <div class="name">interblink</div>
+  <p class="tagline">code, mood boards, and the odd photo — all in one place.</p>
+
+  <div class="links">
+    <a class="card" href="https://github.com/InterCentury" target="_blank" rel="noopener">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.22-3.37-1.22-.46-1.19-1.11-1.51-1.11-1.51-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.89 1.57 2.34 1.12 2.91.85.09-.66.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.72 0 0 .84-.27 2.75 1.05a9.3 9.3 0 0 1 5 0c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.46.1 2.72.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
+      </div>
+      <div class="text-wrap">
+        <div class="label">GitHub</div>
+        <div class="handle">github.com/InterCentury</div>
+      </div>
+      <svg class="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </a>
+
+    <a class="card" href="https://www.pinterest.com/Interblink/" target="_blank" rel="noopener">
+      <div class="icon-wrap pinterest">
+        <svg viewBox="0 0 24 24"><path d="M12.02 2C6.4 2 3.5 5.9 3.5 9.4c0 1.7.9 3.8 2.4 4.4.22.1.35 0 .4-.2l.32-1.3c.05-.17.03-.24-.1-.4-.6-.7-1.05-1.66-1.05-3 0-2.7 2.05-5.5 5.7-5.5 3.1 0 5.1 1.9 5.1 4.5 0 3.1-1.4 5.6-3.5 5.6-1.05 0-1.85-.87-1.6-1.94.3-1.28.9-2.66.9-3.6 0-.83-.45-1.53-1.4-1.53-1.1 0-2 1.16-2 2.7 0 .8.28 1.35.28 1.35s-1.02 4.3-1.2 5.05c-.34 1.5-.05 3.35-.03 3.53.02.1.15.13.2.05.1-.13 1.35-1.7 1.77-3.27.12-.44.7-2.8.7-2.8.35.68 1.36 1.24 2.44 1.24 3.2 0 5.5-2.95 5.5-6.6 0-3.5-2.87-6.2-6.5-6.2Z"/></svg>
+      </div>
+      <div class="text-wrap">
+        <div class="label">Pinterest</div>
+        <div class="handle">pinterest.com/Interblink</div>
+      </div>
+      <svg class="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </a>
+
+    <a class="card" href="https://www.instagram.com/interblink/" target="_blank" rel="noopener">
+      <div class="icon-wrap instagram">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="5.5"/>
+          <circle cx="12" cy="12" r="4"/>
+          <circle cx="17.2" cy="6.8" r="1.1" fill="url(#igGrad)" stroke="none"/>
+        </svg>
+      </div>
+      <div class="text-wrap">
+        <div class="label">Instagram</div>
+        <div class="handle">instagram.com/interblink</div>
+      </div>
+      <svg class="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </a>
+  </div>
+
+  <div class="footer">made with <span>&lt;3</span> — interblink, 2026</div>
+</div>
+
+<!-- gradient defs for instagram icon -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="igGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="50%" stop-color="#7c5cff"/>
+      <stop offset="100%" stop-color="#4ce0d2"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+  // time-based greeting
+  (function () {
+    const hour = new Date().getHours();
+    let text = 'good evening';
+    if (hour >= 5 && hour < 12) text = 'good morning';
+    else if (hour >= 12 && hour < 18) text = 'good afternoon';
+    else if (hour >= 18 && hour < 22) text = 'good evening';
+    else text = 'good night';
+    const el = document.getElementById('greeting');
+    if (el) el.textContent = text;
+  })();
+
+  // ambient drifting particles
+  const field = document.getElementById('field');
+  const count = 34;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 2 + 1;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.top = Math.random() * 100 + 'vh';
+    p.style.opacity = (Math.random() * 0.5 + 0.15).toFixed(2);
+    const duration = Math.random() * 14 + 10;
+    p.style.animationDuration = duration + 's';
+    p.style.animationDelay = (-Math.random() * duration) + 's';
+    field.appendChild(p);
+  }
+</script>
+
+</body>
+</html>
