@@ -1,4 +1,4 @@
-# Link-in-Bio Page
+## LinkTree!
 
 A personal link-in-bio page with animated gradient text and social media connections.
 
