@@ -224,7 +224,7 @@
 
     .icon-wrap.pinterest svg { fill: var(--coral); stroke: none; }
     .icon-wrap.instagram svg { stroke: url(#igGrad); }
-    .icon-wrap.discord svg { fill: #5865F2; stroke: none; }
+    .icon-wrap.discord svg { fill: url(#discordGrad); stroke: none; }
 
     .text-wrap {
       display: flex;
@@ -350,13 +350,18 @@
   <div class="footer">made with <span>&lt;3</span> — interblink, 2026</div>
 </div>
 
-<!-- gradient defs for instagram icon -->
+<!-- gradient defs for icons -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
     <linearGradient id="igGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ff6b6b"/>
       <stop offset="50%" stop-color="#7c5cff"/>
       <stop offset="100%" stop-color="#4ce0d2"/>
+    </linearGradient>
+    <linearGradient id="discordGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff8c2e"/>
+      <stop offset="50%" stop-color="#ff4d6d"/>
+      <stop offset="100%" stop-color="#7c5cff"/>
     </linearGradient>
   </defs>
 </svg>
