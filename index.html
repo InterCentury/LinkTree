@@ -23,6 +23,7 @@
       --ink: #f1f1f6;
       --muted: #8087a0;
       --card-border: rgba(255, 255, 255, 0.08);
+      --discord: #5865F2;
     }
 
     html, body {
@@ -99,7 +100,7 @@
       color: transparent;
       animation: gradientMove 5s ease-in-out infinite alternate, fadeUp 0.7s ease forwards;
       animation-delay: 0.22s, 0.22s;
-      opacity: 0; /* fadeUp overrides */
+      opacity: 0;
       filter: drop-shadow(0 0 10px rgba(255, 120, 50, 0.5)) drop-shadow(0 0 25px rgba(255, 40, 120, 0.4));
       transition: filter 0.3s ease;
     }
@@ -192,6 +193,7 @@
     .card:nth-of-type(1) { animation-delay: 0.62s; --accent: #e5e9ff; }
     .card:nth-of-type(2) { animation-delay: 0.74s; --accent: var(--coral); }
     .card:nth-of-type(3) { animation-delay: 0.86s; --accent: var(--violet); }
+    .card:nth-of-type(4) { animation-delay: 0.98s; --accent: #5865F2; }
 
     @keyframes cardIn {
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -222,6 +224,7 @@
 
     .icon-wrap.pinterest svg { fill: var(--coral); stroke: none; }
     .icon-wrap.instagram svg { stroke: url(#igGrad); }
+    .icon-wrap.discord svg { fill: #5865F2; stroke: none; }
 
     .text-wrap {
       display: flex;
@@ -289,7 +292,6 @@
 
 <div class="stage">
   <div class="eyebrow" id="greeting">hello</div>
-  <!-- .name now has orange+pink animated gradient + glow pulse -->
   <div class="name">interblink</div>
   <p class="tagline">greetings, glad to see you here! take a look around — code, inspiration, and a bit of everything in between.</p>
 
@@ -327,6 +329,19 @@
       <div class="text-wrap">
         <div class="label">Instagram</div>
         <div class="handle">instagram.com/interblink</div>
+      </div>
+      <svg class="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </a>
+
+    <a class="card" href="https://discord.com/users/InterCentury" target="_blank" rel="noopener">
+      <div class="icon-wrap discord">
+        <svg viewBox="0 0 24 24">
+          <path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 5.994-3.03.078.078 0 0 0 .03-.057c.5-5.05-.838-9.52-3.549-13.66a.061.061 0 0 0-.031-.027zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.42 2.157-2.42 1.21 0 2.176 1.096 2.157 2.42 0 1.334-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.42 2.157-2.42 1.21 0 2.176 1.096 2.157 2.42 0 1.334-.946 2.419-2.157 2.419z"/>
+        </svg>
+      </div>
+      <div class="text-wrap">
+        <div class="label">Discord</div>
+        <div class="handle">@intercentury</div>
       </div>
       <svg class="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
     </a>
