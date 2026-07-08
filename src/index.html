@@ -296,7 +296,7 @@
       stroke: var(--ink);
     }
 
-    /* Music Card — sits inline with the link cards, same width */
+    /* Music Card */
     .card.music-card {
       flex-direction: column;
       align-items: stretch;
@@ -538,7 +538,6 @@
           <img src="assets/images/music.png" alt="" id="mcArt">
         </div>
         <div class="mc-info">
-          <!-- Edit these two lines to change what's displayed -->
           <div class="mc-title" id="mcTitle">MusicName</div>
           <div class="mc-artist" id="mcArtist">ArtistName</div>
         </div>
@@ -618,43 +617,57 @@
       musicCard.classList.toggle('playing', playing);
     }
 
-    // Auto-play on load; if the browser blocks it, start on first click anywhere
+    // Try to auto-play
     function tryAutoPlay() {
-      audio.play().catch(() => {
-        document.addEventListener('click', function playOnClick() {
-          audio.play().catch(() => {});
+      audio.play().then(() => {
+        updatePlayButton();
+      }).catch(() => {
+        // Auto-play blocked - show play button, wait for user interaction
+        updatePlayButton();
+        const playOnClick = function() {
+          audio.play().then(() => {
+            updatePlayButton();
+          }).catch(() => {});
           document.removeEventListener('click', playOnClick);
-        }, { once: true });
+        };
+        document.addEventListener('click', playOnClick);
       });
     }
 
     audio.addEventListener('loadedmetadata', () => {
       durEl.textContent = formatTime(audio.duration);
     });
+
     audio.addEventListener('timeupdate', () => {
       if (isSeeking) return;
       const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
       setProgress(pct);
       curEl.textContent = formatTime(audio.currentTime);
     });
+
     audio.addEventListener('play', updatePlayButton);
     audio.addEventListener('pause', updatePlayButton);
 
-    // Play/Pause
+    // Play/Pause - FIXED
     playBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      if (audio.paused) audio.play().catch(() => {});
-      else audio.pause();
+      if (audio.paused) {
+        audio.play().catch(() => {});
+      } else {
+        audio.pause();
+      }
     });
 
     // Restart track
     nextBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       audio.currentTime = 0;
-      if (audio.paused) audio.play().catch(() => {});
+      if (audio.paused) {
+        audio.play().catch(() => {});
+      }
     });
 
-    // Seek by clicking or dragging the progress bar
+    // Seek
     function seekFromEvent(e) {
       const rect = track.getBoundingClientRect();
       const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
@@ -677,7 +690,7 @@
       window.addEventListener('pointerup', onUp);
     });
 
-    // Try to auto-play
+    // Start the player
     tryAutoPlay();
 
     // Clean up on page unload
