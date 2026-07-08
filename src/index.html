@@ -296,7 +296,7 @@
       stroke: var(--ink);
     }
 
-    /* Music Card */
+    /* Music Card — sits inline with the link cards, same width */
     .card.music-card {
       flex-direction: column;
       align-items: stretch;
@@ -535,14 +535,15 @@
     <div class="card music-card" id="musicCard">
       <div class="mc-top">
         <div class="mc-art">
-          <img src="assets/images/music.png" alt="" id="mcArt" onerror="this.style.display='none'">
+          <img src="assets/images/music.png" alt="" id="mcArt">
         </div>
         <div class="mc-info">
-          <div class="mc-title" id="mcTitle">Ambient Dreams</div>
-          <div class="mc-artist" id="mcArtist">interblink</div>
+          <!-- Edit these two lines to change what's displayed -->
+          <div class="mc-title" id="mcTitle">MusicName</div>
+          <div class="mc-artist" id="mcArtist">ArtistName</div>
         </div>
         <div class="mc-controls">
-          <button class="mc-btn" id="playBtn" aria-label="Play">
+          <button class="mc-btn" id="playBtn" aria-label="Play" aria-pressed="false">
             <svg class="mc-icon-play" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
             <svg class="mc-icon-pause" viewBox="0 0 24 24" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           </button>
@@ -577,18 +578,17 @@
 </svg>
 
 <script>
-  // ===== MUSIC PLAYER - FIXED =====
-  document.addEventListener('DOMContentLoaded', function() {
+  // ===== MUSIC PLAYER =====
+  (function() {
     const audio = new Audio('assets/BGM/1.mp3');
     audio.loop = true;
     audio.volume = 0.7;
-    audio.preload = 'auto';
 
+    const musicCard = document.getElementById('musicCard');
     const playBtn = document.getElementById('playBtn');
     const nextBtn = document.getElementById('nextBtn');
-    const playIcon = document.querySelector('.mc-icon-play');
-    const pauseIcon = document.querySelector('.mc-icon-pause');
-    const musicCard = document.getElementById('musicCard');
+    const playIcon = musicCard.querySelector('.mc-icon-play');
+    const pauseIcon = musicCard.querySelector('.mc-icon-pause');
     const track = document.getElementById('mcTrack');
     const fill = document.getElementById('mcFill');
     const thumb = document.getElementById('mcThumb');
@@ -596,7 +596,6 @@
     const durEl = document.getElementById('mcDuration');
 
     let isSeeking = false;
-    let isPlaying = false;
 
     function formatTime(s) {
       if (!isFinite(s) || s < 0) s = 0;
@@ -606,139 +605,79 @@
     }
 
     function setProgress(pct) {
-      const clamped = Math.min(100, Math.max(0, pct));
-      fill.style.width = clamped + '%';
-      thumb.style.left = clamped + '%';
+      fill.style.width = pct + '%';
+      thumb.style.left = pct + '%';
     }
 
-    function updateUI() {
+    function updatePlayButton() {
       const playing = !audio.paused;
-      isPlaying = playing;
-      
-      if (playing) {
-        playIcon.style.display = 'none';
-        pauseIcon.style.display = 'block';
-        playBtn.setAttribute('aria-label', 'Pause');
-        musicCard.classList.add('playing');
-      } else {
-        playIcon.style.display = 'block';
-        pauseIcon.style.display = 'none';
-        playBtn.setAttribute('aria-label', 'Play');
-        musicCard.classList.remove('playing');
-      }
+      playIcon.style.display = playing ? 'none' : 'block';
+      pauseIcon.style.display = playing ? 'block' : 'none';
+      playBtn.setAttribute('aria-pressed', String(playing));
+      playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+      musicCard.classList.toggle('playing', playing);
     }
 
-    // Toggle play/pause
-    function togglePlay() {
-      if (audio.paused) {
-        audio.play().then(() => {
-          updateUI();
-        }).catch(function(err) {
-          console.log('Playback error:', err);
-          // If autoplay is blocked, try again on user interaction
-          document.addEventListener('click', function playOnClick() {
-            audio.play().then(() => {
-              updateUI();
-            }).catch(() => {});
-            document.removeEventListener('click', playOnClick);
-          }, { once: true });
-        });
-      } else {
-        audio.pause();
-        updateUI();
-      }
+    // Try to auto-play on load. If the browser blocks it (common autoplay
+    // policy), we simply leave it paused — the visible Play button starts
+    // it on demand, so we don't need a page-wide click listener for this.
+    function tryAutoPlay() {
+      audio.play().catch(() => {});
     }
 
-    // Event listeners
-    audio.addEventListener('play', updateUI);
-    audio.addEventListener('pause', updateUI);
-    audio.addEventListener('ended', updateUI);
-
-    audio.addEventListener('loadedmetadata', function() {
-      if (audio.duration && isFinite(audio.duration)) {
-        durEl.textContent = formatTime(audio.duration);
-      }
+    audio.addEventListener('loadedmetadata', () => {
+      durEl.textContent = formatTime(audio.duration);
     });
-
-    audio.addEventListener('timeupdate', function() {
+    audio.addEventListener('timeupdate', () => {
       if (isSeeking) return;
-      if (audio.duration && isFinite(audio.duration)) {
-        const pct = (audio.currentTime / audio.duration) * 100;
-        setProgress(pct);
-        curEl.textContent = formatTime(audio.currentTime);
-      }
+      const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+      setProgress(pct);
+      curEl.textContent = formatTime(audio.currentTime);
     });
+    audio.addEventListener('play', updatePlayButton);
+    audio.addEventListener('pause', updatePlayButton);
 
-    // Play button click
+    // Play/Pause
     playBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      togglePlay();
+      if (audio.paused) audio.play().catch(() => {});
+      else audio.pause();
     });
 
-    // Restart button
+    // Restart track
     nextBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       audio.currentTime = 0;
-      setProgress(0);
-      curEl.textContent = '0:00';
-      if (audio.paused) {
-        audio.play().then(() => {
-          updateUI();
-        }).catch(() => {});
-      }
+      if (audio.paused) audio.play().catch(() => {});
     });
 
-    // Seek functionality
+    // Seek by clicking or dragging the progress bar
     function seekFromEvent(e) {
       const rect = track.getBoundingClientRect();
       const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
       const pct = Math.min(1, Math.max(0, x / rect.width));
       setProgress(pct * 100);
-      if (audio.duration && isFinite(audio.duration)) {
-        audio.currentTime = pct * audio.duration;
-        curEl.textContent = formatTime(audio.currentTime);
-      }
+      curEl.textContent = formatTime(pct * (audio.duration || 0));
+      if (audio.duration) audio.currentTime = pct * audio.duration;
     }
 
     track.addEventListener('pointerdown', function(e) {
       isSeeking = true;
       seekFromEvent(e);
-      
-      const onMove = function(ev) {
-        seekFromEvent(ev);
-      };
-      
-      const onUp = function() {
+      const onMove = (ev) => seekFromEvent(ev);
+      const onUp = () => {
         isSeeking = false;
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
       };
-      
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
     });
 
     // Try to auto-play
-    function tryAutoPlay() {
-      audio.play().then(function() {
-        updateUI();
-      }).catch(function() {
-        updateUI();
-        // User needs to click somewhere to start
-        const startAudio = function() {
-          audio.play().then(function() {
-            updateUI();
-          }).catch(function() {});
-          document.removeEventListener('click', startAudio);
-        };
-        document.addEventListener('click', startAudio);
-      });
-    }
+    tryAutoPlay();
 
-    // Start after a small delay
-    setTimeout(tryAutoPlay, 500);
-
-    // Cleanup
+    // Clean up on page unload
     window.addEventListener('beforeunload', function() {
       audio.pause();
       audio.src = '';
@@ -746,7 +685,7 @@
 
     // Expose for debugging
     window.__audio = audio;
-  });
+  })();
 
   // ===== TYPEWRITER =====
   const TYPEWRITER_SPEED = 65;
