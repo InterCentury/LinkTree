@@ -535,14 +535,14 @@
     <div class="card music-card" id="musicCard">
       <div class="mc-top">
         <div class="mc-art">
-          <img src="assets/images/music.png" alt="" id="mcArt">
+          <img src="assets/images/music.png" alt="" id="mcArt" onerror="this.style.display='none'">
         </div>
         <div class="mc-info">
-          <div class="mc-title" id="mcTitle">MusicName</div>
-          <div class="mc-artist" id="mcArtist">ArtistName</div>
+          <div class="mc-title" id="mcTitle">Ambient Dreams</div>
+          <div class="mc-artist" id="mcArtist">interblink</div>
         </div>
         <div class="mc-controls">
-          <button class="mc-btn" id="playBtn" aria-label="Play" aria-pressed="false">
+          <button class="mc-btn" id="playBtn" aria-label="Play">
             <svg class="mc-icon-play" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
             <svg class="mc-icon-pause" viewBox="0 0 24 24" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           </button>
@@ -577,17 +577,18 @@
 </svg>
 
 <script>
-  // ===== MUSIC PLAYER =====
-  (function() {
+  // ===== MUSIC PLAYER - FIXED =====
+  document.addEventListener('DOMContentLoaded', function() {
     const audio = new Audio('assets/BGM/1.mp3');
     audio.loop = true;
     audio.volume = 0.7;
+    audio.preload = 'auto';
 
-    const musicCard = document.getElementById('musicCard');
     const playBtn = document.getElementById('playBtn');
     const nextBtn = document.getElementById('nextBtn');
-    const playIcon = musicCard.querySelector('.mc-icon-play');
-    const pauseIcon = musicCard.querySelector('.mc-icon-pause');
+    const playIcon = document.querySelector('.mc-icon-play');
+    const pauseIcon = document.querySelector('.mc-icon-pause');
+    const musicCard = document.getElementById('musicCard');
     const track = document.getElementById('mcTrack');
     const fill = document.getElementById('mcFill');
     const thumb = document.getElementById('mcThumb');
@@ -595,6 +596,7 @@
     const durEl = document.getElementById('mcDuration');
 
     let isSeeking = false;
+    let isPlaying = false;
 
     function formatTime(s) {
       if (!isFinite(s) || s < 0) s = 0;
@@ -604,96 +606,139 @@
     }
 
     function setProgress(pct) {
-      fill.style.width = pct + '%';
-      thumb.style.left = pct + '%';
+      const clamped = Math.min(100, Math.max(0, pct));
+      fill.style.width = clamped + '%';
+      thumb.style.left = clamped + '%';
     }
 
-    function updatePlayButton() {
+    function updateUI() {
       const playing = !audio.paused;
-      playIcon.style.display = playing ? 'none' : 'block';
-      pauseIcon.style.display = playing ? 'block' : 'none';
-      playBtn.setAttribute('aria-pressed', String(playing));
-      playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-      musicCard.classList.toggle('playing', playing);
+      isPlaying = playing;
+      
+      if (playing) {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        playBtn.setAttribute('aria-label', 'Pause');
+        musicCard.classList.add('playing');
+      } else {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        playBtn.setAttribute('aria-label', 'Play');
+        musicCard.classList.remove('playing');
+      }
     }
 
-    // Try to auto-play
-    function tryAutoPlay() {
-      audio.play().then(() => {
-        updatePlayButton();
-      }).catch(() => {
-        // Auto-play blocked - show play button, wait for user interaction
-        updatePlayButton();
-        const playOnClick = function() {
-          audio.play().then(() => {
-            updatePlayButton();
-          }).catch(() => {});
-          document.removeEventListener('click', playOnClick);
-        };
-        document.addEventListener('click', playOnClick);
-      });
-    }
-
-    audio.addEventListener('loadedmetadata', () => {
-      durEl.textContent = formatTime(audio.duration);
-    });
-
-    audio.addEventListener('timeupdate', () => {
-      if (isSeeking) return;
-      const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-      setProgress(pct);
-      curEl.textContent = formatTime(audio.currentTime);
-    });
-
-    audio.addEventListener('play', updatePlayButton);
-    audio.addEventListener('pause', updatePlayButton);
-
-    // Play/Pause - FIXED
-    playBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
+    // Toggle play/pause
+    function togglePlay() {
       if (audio.paused) {
-        audio.play().catch(() => {});
+        audio.play().then(() => {
+          updateUI();
+        }).catch(function(err) {
+          console.log('Playback error:', err);
+          // If autoplay is blocked, try again on user interaction
+          document.addEventListener('click', function playOnClick() {
+            audio.play().then(() => {
+              updateUI();
+            }).catch(() => {});
+            document.removeEventListener('click', playOnClick);
+          }, { once: true });
+        });
       } else {
         audio.pause();
+        updateUI();
+      }
+    }
+
+    // Event listeners
+    audio.addEventListener('play', updateUI);
+    audio.addEventListener('pause', updateUI);
+    audio.addEventListener('ended', updateUI);
+
+    audio.addEventListener('loadedmetadata', function() {
+      if (audio.duration && isFinite(audio.duration)) {
+        durEl.textContent = formatTime(audio.duration);
       }
     });
 
-    // Restart track
+    audio.addEventListener('timeupdate', function() {
+      if (isSeeking) return;
+      if (audio.duration && isFinite(audio.duration)) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        setProgress(pct);
+        curEl.textContent = formatTime(audio.currentTime);
+      }
+    });
+
+    // Play button click
+    playBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      togglePlay();
+    });
+
+    // Restart button
     nextBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       audio.currentTime = 0;
+      setProgress(0);
+      curEl.textContent = '0:00';
       if (audio.paused) {
-        audio.play().catch(() => {});
+        audio.play().then(() => {
+          updateUI();
+        }).catch(() => {});
       }
     });
 
-    // Seek
+    // Seek functionality
     function seekFromEvent(e) {
       const rect = track.getBoundingClientRect();
       const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
       const pct = Math.min(1, Math.max(0, x / rect.width));
       setProgress(pct * 100);
-      curEl.textContent = formatTime(pct * (audio.duration || 0));
-      if (audio.duration) audio.currentTime = pct * audio.duration;
+      if (audio.duration && isFinite(audio.duration)) {
+        audio.currentTime = pct * audio.duration;
+        curEl.textContent = formatTime(audio.currentTime);
+      }
     }
 
     track.addEventListener('pointerdown', function(e) {
       isSeeking = true;
       seekFromEvent(e);
-      const onMove = (ev) => seekFromEvent(ev);
-      const onUp = () => {
+      
+      const onMove = function(ev) {
+        seekFromEvent(ev);
+      };
+      
+      const onUp = function() {
         isSeeking = false;
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
       };
+      
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
     });
 
-    // Start the player
-    tryAutoPlay();
+    // Try to auto-play
+    function tryAutoPlay() {
+      audio.play().then(function() {
+        updateUI();
+      }).catch(function() {
+        updateUI();
+        // User needs to click somewhere to start
+        const startAudio = function() {
+          audio.play().then(function() {
+            updateUI();
+          }).catch(function() {});
+          document.removeEventListener('click', startAudio);
+        };
+        document.addEventListener('click', startAudio);
+      });
+    }
 
-    // Clean up on page unload
+    // Start after a small delay
+    setTimeout(tryAutoPlay, 500);
+
+    // Cleanup
     window.addEventListener('beforeunload', function() {
       audio.pause();
       audio.src = '';
@@ -701,7 +746,7 @@
 
     // Expose for debugging
     window.__audio = audio;
-  })();
+  });
 
   // ===== TYPEWRITER =====
   const TYPEWRITER_SPEED = 65;
