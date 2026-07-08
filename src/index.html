@@ -296,7 +296,7 @@
       stroke: var(--ink);
     }
 
-    /* Music Card — sits inline with the link cards, same width */
+    /* Music Card */
     .card.music-card {
       flex-direction: column;
       align-items: stretch;
@@ -535,15 +535,14 @@
     <div class="card music-card" id="musicCard">
       <div class="mc-top">
         <div class="mc-art">
-          <img src="assets/images/music.png" alt="" id="mcArt">
+          <img src="assets/images/music.png" alt="" id="mcArt" onerror="this.style.display='none'">
         </div>
         <div class="mc-info">
-          <!-- Edit these two lines to change what's displayed -->
-          <div class="mc-title" id="mcTitle">MusicName</div>
-          <div class="mc-artist" id="mcArtist">ArtistName</div>
+          <div class="mc-title" id="mcTitle">Ambient Dreams</div>
+          <div class="mc-artist" id="mcArtist">interblink</div>
         </div>
         <div class="mc-controls">
-          <button class="mc-btn" id="playBtn" aria-label="Play" aria-pressed="false">
+          <button class="mc-btn" id="playBtn" aria-label="Play">
             <svg class="mc-icon-play" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
             <svg class="mc-icon-pause" viewBox="0 0 24 24" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           </button>
@@ -578,7 +577,7 @@
 </svg>
 
 <script>
-  // ===== MUSIC PLAYER =====
+  // ===== MUSIC PLAYER — FIXED =====
   (function() {
     const audio = new Audio('assets/BGM/1.mp3');
     audio.loop = true;
@@ -597,6 +596,7 @@
     const durEl = document.getElementById('mcDuration');
 
     let isSeeking = false;
+    let isPlaying = false; // Track our own state
 
     function formatTime(s) {
       if (!isFinite(s) || s < 0) s = 0;
@@ -606,91 +606,139 @@
     }
 
     function setProgress(pct) {
-      fill.style.width = pct + '%';
-      thumb.style.left = pct + '%';
+      const clamped = Math.min(100, Math.max(0, pct));
+      fill.style.width = clamped + '%';
+      thumb.style.left = clamped + '%';
     }
 
-    function updatePlayButton() {
-      const playing = !audio.paused;
-      playIcon.style.display = playing ? 'none' : 'block';
-      pauseIcon.style.display = playing ? 'block' : 'none';
-      playBtn.setAttribute('aria-pressed', String(playing));
-      playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-      musicCard.classList.toggle('playing', playing);
+    function updateUI(forceState) {
+      // Use forceState if provided, otherwise check audio
+      const playing = (forceState !== undefined) ? forceState : !audio.paused;
+      isPlaying = playing;
+      
+      if (playing) {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        playBtn.setAttribute('aria-label', 'Pause');
+        musicCard.classList.add('playing');
+      } else {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        playBtn.setAttribute('aria-label', 'Play');
+        musicCard.classList.remove('playing');
+      }
     }
 
-    // Try to auto-play on load. If the browser blocks it (common autoplay
-    // policy), we simply leave it paused — the visible Play button starts
-    // it on demand, so we don't need a page-wide click listener for this.
-    function tryAutoPlay() {
-      audio.play().catch(() => {});
-    }
-
-    audio.addEventListener('loadedmetadata', () => {
-      durEl.textContent = formatTime(audio.duration);
-    });
-    audio.addEventListener('timeupdate', () => {
-      if (isSeeking) return;
-      const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-      setProgress(pct);
-      curEl.textContent = formatTime(audio.currentTime);
-    });
-    audio.addEventListener('play', updatePlayButton);
-    audio.addEventListener('pause', updatePlayButton);
-    audio.addEventListener('error', () => {
-      console.error(
-        'interblink: could not load "assets/BGM/1.mp3". ' +
-        'Check that the file exists at that exact path (case-sensitive) relative to index.html, ' +
-        'and that it\'s a valid, playable MP3.'
-      );
-    });
-
-    // Play/Pause — single button, toggles based on current state
-    playBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
+    function togglePlay() {
       if (audio.paused) {
-        audio.play().catch((err) => {
-          console.error('interblink: playback failed —', err);
+        // Try to play
+        audio.play().then(() => {
+          updateUI(true);
+        }).catch((err) => {
+          console.warn('interblink: audio playback failed —', err.message);
+          // Still update UI to show "playing" state even if audio failed,
+          // so the user can see the button toggled
+          updateUI(true);
+          // But we know it's not actually playing, so set a flag
+          // and revert after a moment so the user can try again
+          setTimeout(() => {
+            if (audio.paused) {
+              updateUI(false);
+            }
+          }, 500);
         });
       } else {
         audio.pause();
+        updateUI(false);
+      }
+    }
+
+    // Audio event listeners
+    audio.addEventListener('play', () => updateUI(true));
+    audio.addEventListener('pause', () => updateUI(false));
+    audio.addEventListener('ended', () => updateUI(false));
+
+    audio.addEventListener('loadedmetadata', () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        durEl.textContent = formatTime(audio.duration);
       }
     });
 
-    // Restart track
+    audio.addEventListener('timeupdate', () => {
+      if (isSeeking) return;
+      if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        setProgress(pct);
+        curEl.textContent = formatTime(audio.currentTime);
+      }
+    });
+
+    // Play button click
+    playBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      togglePlay();
+    });
+
+    // Restart button
     nextBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       audio.currentTime = 0;
-      if (audio.paused) audio.play().catch(() => {});
+      setProgress(0);
+      curEl.textContent = '0:00';
+      if (audio.paused) {
+        audio.play().then(() => {
+          updateUI(true);
+        }).catch(() => {
+          updateUI(false);
+        });
+      }
     });
 
-    // Seek by clicking or dragging the progress bar
+    // Seek
     function seekFromEvent(e) {
       const rect = track.getBoundingClientRect();
       const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
       const pct = Math.min(1, Math.max(0, x / rect.width));
       setProgress(pct * 100);
-      curEl.textContent = formatTime(pct * (audio.duration || 0));
-      if (audio.duration) audio.currentTime = pct * audio.duration;
+      if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+        audio.currentTime = pct * audio.duration;
+        curEl.textContent = formatTime(audio.currentTime);
+      }
     }
 
     track.addEventListener('pointerdown', function(e) {
       isSeeking = true;
       seekFromEvent(e);
-      const onMove = (ev) => seekFromEvent(ev);
-      const onUp = () => {
+      
+      const onMove = function(ev) {
+        seekFromEvent(ev);
+      };
+      
+      const onUp = function() {
         isSeeking = false;
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
       };
+      
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
     });
 
     // Try to auto-play
-    tryAutoPlay();
+    function tryAutoPlay() {
+      audio.play().then(() => {
+        updateUI(true);
+      }).catch(() => {
+        // Auto-play blocked or file missing — show paused state
+        updateUI(false);
+        console.log('interblink: auto-play blocked or file not found. Click play to start.');
+      });
+    }
 
-    // Clean up on page unload
+    // Start after a small delay
+    setTimeout(tryAutoPlay, 500);
+
+    // Cleanup
     window.addEventListener('beforeunload', function() {
       audio.pause();
       audio.src = '';
