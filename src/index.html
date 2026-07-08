@@ -538,8 +538,9 @@
           <img src="assets/images/music.png" alt="" id="mcArt">
         </div>
         <div class="mc-info">
-          <div class="mc-title" id="mcTitle">Now Playing</div>
-          <div class="mc-artist" id="mcArtist">interblink</div>
+          <!-- Edit these two lines to change what's displayed -->
+          <div class="mc-title" id="mcTitle">MusicName</div>
+          <div class="mc-artist" id="mcArtist">ArtistName</div>
         </div>
         <div class="mc-controls">
           <button class="mc-btn" id="playBtn" aria-label="Play" aria-pressed="false">
@@ -579,7 +580,7 @@
 <script>
   // ===== MUSIC PLAYER =====
   (function() {
-    const audio = new Audio('assets/BGM/1.mp4');
+    const audio = new Audio('assets/BGM/1.mp3');
     audio.loop = true;
     audio.volume = 0.7;
 
