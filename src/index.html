@@ -296,148 +296,6 @@
       stroke: var(--ink);
     }
 
-    /* Music Card */
-    .card.music-card {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 14px;
-      cursor: default;
-      --accent: var(--cyan);
-      animation-delay: 1.08s;
-    }
-    .music-card:hover {
-      transform: none;
-    }
-    .music-card.playing {
-      box-shadow: 0 4px 26px rgba(124, 92, 255, 0.14);
-    }
-
-    .mc-top {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .mc-art {
-      flex-shrink: 0;
-      width: 46px;
-      height: 46px;
-      border-radius: 10px;
-      overflow: hidden;
-      background: rgba(255, 255, 255, 0.06);
-    }
-    .mc-art img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .mc-info {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .mc-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: 15px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .mc-artist {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11.5px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .mc-controls {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      flex-shrink: 0;
-    }
-    .mc-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: none;
-      background: none;
-      color: var(--ink);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.25s ease, transform 0.15s ease;
-    }
-    .mc-btn:hover { background: rgba(255, 255, 255, 0.06); }
-    .mc-btn:active { transform: scale(0.92); }
-    .mc-btn svg { width: 16px; height: 16px; fill: currentColor; }
-    #nextBtn svg { width: 15px; height: 15px; color: var(--muted); }
-    #nextBtn:hover svg { color: var(--ink); }
-
-    .mc-progress-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .mc-time {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
-      color: var(--muted);
-      flex-shrink: 0;
-      width: 28px;
-    }
-    .mc-time.end { text-align: right; }
-
-    .mc-track {
-      position: relative;
-      flex: 1;
-      height: 14px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-    }
-    .mc-track::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255, 255, 255, 0.08);
-    }
-    .mc-fill {
-      position: absolute;
-      left: 0;
-      height: 4px;
-      width: 0%;
-      border-radius: 2px;
-      background: linear-gradient(90deg, var(--cyan), var(--violet));
-      pointer-events: none;
-    }
-    .mc-thumb {
-      position: absolute;
-      left: 0%;
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--violet), var(--cyan));
-      transform: translateX(-50%);
-      box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.15);
-      transition: box-shadow 0.2s ease;
-      pointer-events: none;
-    }
-    .mc-track:hover .mc-thumb {
-      box-shadow: 0 0 0 5px rgba(124, 92, 255, 0.2);
-    }
-
     .footer {
       margin-top: 40px;
       font-family: 'JetBrains Mono', monospace;
@@ -531,7 +389,7 @@
       <svg class="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
     </a>
 
-    <!-- Music -->
+    <!-- MUSIC CARD - COMMENTED OUT 
     <div class="card music-card" id="musicCard">
       <div class="mc-top">
         <div class="mc-art">
@@ -560,6 +418,7 @@
         <span class="mc-time end" id="mcDuration">0:00</span>
       </div>
     </div>
+    -->
   </div>
 
   <div class="footer">made with <span>&lt;3</span> — interblink, 2026</div>
@@ -577,7 +436,8 @@
 </svg>
 
 <script>
-  // ===== MUSIC PLAYER — FIXED =====
+  // ===== MUSIC PLAYER — COMMENTED OUT =====
+  /*
   (function() {
     const audio = new Audio('assets/BGM/1.mp3');
     audio.loop = true;
@@ -596,7 +456,7 @@
     const durEl = document.getElementById('mcDuration');
 
     let isSeeking = false;
-    let isPlaying = false; // Track our own state
+    let isPlaying = false;
 
     function formatTime(s) {
       if (!isFinite(s) || s < 0) s = 0;
@@ -612,7 +472,6 @@
     }
 
     function updateUI(forceState) {
-      // Use forceState if provided, otherwise check audio
       const playing = (forceState !== undefined) ? forceState : !audio.paused;
       isPlaying = playing;
       
@@ -631,16 +490,11 @@
 
     function togglePlay() {
       if (audio.paused) {
-        // Try to play
         audio.play().then(() => {
           updateUI(true);
         }).catch((err) => {
           console.warn('interblink: audio playback failed —', err.message);
-          // Still update UI to show "playing" state even if audio failed,
-          // so the user can see the button toggled
           updateUI(true);
-          // But we know it's not actually playing, so set a flag
-          // and revert after a moment so the user can try again
           setTimeout(() => {
             if (audio.paused) {
               updateUI(false);
@@ -653,7 +507,6 @@
       }
     }
 
-    // Audio event listeners
     audio.addEventListener('play', () => updateUI(true));
     audio.addEventListener('pause', () => updateUI(false));
     audio.addEventListener('ended', () => updateUI(false));
@@ -673,13 +526,11 @@
       }
     });
 
-    // Play button click
     playBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       togglePlay();
     });
 
-    // Restart button
     nextBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       audio.currentTime = 0;
@@ -694,7 +545,6 @@
       }
     });
 
-    // Seek
     function seekFromEvent(e) {
       const rect = track.getBoundingClientRect();
       const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
@@ -724,29 +574,25 @@
       window.addEventListener('pointerup', onUp);
     });
 
-    // Try to auto-play
     function tryAutoPlay() {
       audio.play().then(() => {
         updateUI(true);
       }).catch(() => {
-        // Auto-play blocked or file missing — show paused state
         updateUI(false);
         console.log('interblink: auto-play blocked or file not found. Click play to start.');
       });
     }
 
-    // Start after a small delay
     setTimeout(tryAutoPlay, 500);
 
-    // Cleanup
     window.addEventListener('beforeunload', function() {
       audio.pause();
       audio.src = '';
     });
 
-    // Expose for debugging
     window.__audio = audio;
   })();
+  */
 
   // ===== TYPEWRITER =====
   const TYPEWRITER_SPEED = 65;
