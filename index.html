@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>interblink · glow + animated</title>
+  <title>interblink</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -46,7 +46,6 @@
       position: relative;
     }
 
-    /* drifting particles */
     .field {
       position: fixed;
       inset: 0;
@@ -85,7 +84,6 @@
       animation-delay: 0.1s;
     }
 
-    /* ----- GLOWING ANIMATED ORANGE → PINK TEXT ----- */
     .name {
       font-family: 'Space Grotesk', sans-serif;
       font-weight: 700;
@@ -104,7 +102,6 @@
       transition: filter 0.3s ease;
     }
 
-    /* extra glow pulse */
     @keyframes glowPulse {
       0% { filter: drop-shadow(0 0 8px rgba(255, 140, 46, 0.5)) drop-shadow(0 0 25px rgba(255, 40, 120, 0.4)); }
       50% { filter: drop-shadow(0 0 18px rgba(255, 140, 46, 0.9)) drop-shadow(0 0 45px rgba(255, 40, 120, 0.7)); }
@@ -122,16 +119,50 @@
       100% { background-position: 0% 50%; }
     }
 
+    .tagline-wrapper {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 38px;
+      width: 100%;
+    }
+
     .tagline {
       font-size: 14.5px;
       color: var(--muted);
       text-align: center;
       max-width: 320px;
-      line-height: 1.5;
-      margin-bottom: 38px;
+      line-height: 1.6;
+      min-height: 65px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       opacity: 0;
-      animation: fadeUp 0.7s ease forwards;
-      animation-delay: 0.34s;
+      transition: opacity 0.5s ease;
+    }
+
+    .tagline.visible {
+      opacity: 1;
+    }
+
+    .tagline.hidden {
+      opacity: 0;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background: var(--cyan);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.7s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
     }
 
     @keyframes fadeUp {
@@ -286,6 +317,9 @@
       .name {
         filter: drop-shadow(0 0 12px rgba(255, 120, 50, 0.6));
       }
+      .cursor {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -296,7 +330,10 @@
 <div class="stage">
   <div class="eyebrow" id="greeting">hello</div>
   <div class="name">interblink</div>
-  <p class="tagline">greetings, glad to see you here! take a look around — code, inspiration, and a bit of everything in between.</p>
+  
+  <div class="tagline-wrapper">
+    <p class="tagline visible" id="tagline"></p>
+  </div>
 
   <div class="links">
     <!-- GitHub -->
@@ -311,7 +348,7 @@
       <svg class="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
     </a>
 
-    <!-- Instagram - fixed -->
+    <!-- Instagram -->
     <a class="card" href="https://www.instagram.com/interblink/" target="_blank" rel="noopener">
       <div class="icon-wrap">
         <svg viewBox="0 0 24 24">
@@ -367,6 +404,74 @@
 </svg>
 
 <script>
+  // ===== CONFIGURATION =====
+  const TYPEWRITER_SPEED = 65;        // milliseconds per character (lower = faster)
+  const FADE_AWAY_SPEED = 500;        // milliseconds for fade transition
+  const PAUSE_BEFORE_FADE = 2000;     // milliseconds to wait after typing completes
+  // =========================
+
+  const phrases = [
+    "Greetings, glad to see you here! Take a look around — code, inspiration, and a bit of everything in between.",
+    "On 3 July 2022, I wrote my first \"Hello world\" in C++. The journey began on 21 March 2022 when I built my first PC.",
+    "Isn't my GitHub rising?... yet, It's slow but unstoppable!",
+    "Feel free to explore more about me! Connect with me through the links below. Arigato!"
+  ];
+
+  let currentPhraseIndex = 0;
+  let isTyping = false;
+  let timeoutId = null;
+
+  const taglineElement = document.getElementById('tagline');
+
+  function typeWriter(text, index, callback) {
+    if (index < text.length) {
+      taglineElement.textContent = text.substring(0, index + 1);
+      taglineElement.classList.remove('hidden');
+      taglineElement.classList.add('visible');
+      timeoutId = setTimeout(() => {
+        typeWriter(text, index + 1, callback);
+      }, TYPEWRITER_SPEED);
+    } else {
+      // typing complete
+      isTyping = false;
+      if (callback) callback();
+    }
+  }
+
+  function fadeAndNext() {
+    // fade out
+    taglineElement.classList.remove('visible');
+    taglineElement.classList.add('hidden');
+    
+    setTimeout(() => {
+      // move to next phrase
+      currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+      const nextText = phrases[currentPhraseIndex];
+      
+      // clear and start typing
+      taglineElement.textContent = '';
+      isTyping = true;
+      typeWriter(nextText, 0, () => {
+        // after typing complete, wait then fade
+        setTimeout(() => {
+          fadeAndNext();
+        }, PAUSE_BEFORE_FADE);
+      });
+    }, FADE_AWAY_SPEED);
+  }
+
+  // start the loop
+  function startLoop() {
+    const firstText = phrases[0];
+    taglineElement.textContent = '';
+    isTyping = true;
+    typeWriter(firstText, 0, () => {
+      setTimeout(() => {
+        fadeAndNext();
+      }, PAUSE_BEFORE_FADE);
+    });
+  }
+
   // time-based greeting
   (function () {
     const hour = new Date().getHours();
@@ -396,6 +501,12 @@
     p.style.animationDelay = (-Math.random() * duration) + 's';
     field.appendChild(p);
   }
+
+  // start the typewriter loop after page load
+  window.addEventListener('load', () => {
+    // delay start to let other animations play
+    setTimeout(startLoop, 800);
+  });
 </script>
 </body>
 </html>
